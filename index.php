@@ -51,14 +51,16 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Muat Naik Gambar (Pilihan)</label>
-                    <div class="relative">
-                        <input type="file" id="gambar-input" name="gambar" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="document.getElementById('file-name').textContent = this.files.length > 0 ? this.files[0].name : 'Tiada fail dipilih'">
-                        <div class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-gray-50 flex items-center justify-between text-sm transition-colors group-hover:bg-emerald-50 pointer-events-none">
-                            <span id="file-name" class="text-gray-500 truncate mr-2">Pilih gambar...</span>
-                            <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-semibold text-xs whitespace-nowrap">Cari Fail</span>
+                    <label for="gambar-input" class="w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 hover:bg-emerald-50 cursor-pointer transition-colors mt-1 group">
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <div class="bg-emerald-200 text-emerald-700 p-2 rounded-lg group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                            </div>
+                            <span id="file-name" class="text-sm text-gray-600 font-medium truncate">Tekan untuk pilih gambar...</span>
                         </div>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">Sokongan format: JPG, PNG, GIF (Max: 5MB)</p>
+                    </label>
+                    <input type="file" id="gambar-input" name="gambar" accept="image/*" class="hidden" onchange="document.getElementById('file-name').textContent = this.files.length > 0 ? this.files[0].name : 'Tekan untuk pilih gambar...'">
+                    <p class="text-xs text-gray-500 mt-2 text-center">Sokongan: JPG, PNG, GIF (Max: 5MB)</p>
                 </div>
                 <button type="submit" class="w-full bg-emerald-700 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-emerald-700/30 hover:bg-emerald-800 hover:shadow-emerald-800/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-lg flex justify-center items-center gap-2">
                     Jana Kad Raya <span class="text-amber-400">✨</span>
