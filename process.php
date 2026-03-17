@@ -35,13 +35,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $unique_id = substr(md5(uniqid(rand(), true)), 0, 8);
     
     $stmt = $conn->prepare("INSERT INTO ucapan_raya (unique_id, nama_pengirim, nama_penerima, mesej, tema_warna, image_path) VALUES (?, ?, ?, ?, ?, ?)");
+    
+    if (!$stmt) {
+        die("<h3>Ralat Pangkalan Data (HTTP 500)</h3><p>Jadual 'ucapan_raya' belum wujud atau sambungan ke pangkalan data gagal.</p><p>Sila pastikan anda melawati <a href='db_setup.php'>Pautan Setup Pangkalan Data Pemasangan (db_setup.php)</a> terlebih dahulu sebelum menjana kad!</p> <br><small>Error detail: " . $conn->error . "</small>");
+    }
+
     $stmt->bind_param("ssssss", $unique_id, $pengirim, $penerima, $mesej, $tema, $image_path);
     
     if ($stmt->execute()) {
         header("Location: view.php?id=" . $unique_id);
         exit();
     } else {
-        echo "Ralat: " . $stmt->error;
+        echo "Ralat Pelaksanaan: " . $stmt->error;
     }
     
     $stmt->close();
