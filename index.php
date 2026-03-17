@@ -51,7 +51,13 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Muat Naik Gambar (Pilihan)</label>
-                    <input type="file" name="gambar" accept="image/*" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors bg-gray-50 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                    <div class="relative">
+                        <input type="file" id="gambar-input" name="gambar" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="document.getElementById('file-name').textContent = this.files.length > 0 ? this.files[0].name : 'Tiada fail dipilih'">
+                        <div class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-gray-50 flex items-center justify-between text-sm transition-colors group-hover:bg-emerald-50 pointer-events-none">
+                            <span id="file-name" class="text-gray-500 truncate mr-2">Pilih gambar...</span>
+                            <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-semibold text-xs whitespace-nowrap">Cari Fail</span>
+                        </div>
+                    </div>
                     <p class="text-xs text-gray-500 mt-1">Sokongan format: JPG, PNG, GIF (Max: 5MB)</p>
                 </div>
                 <button type="submit" class="w-full bg-emerald-700 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-emerald-700/30 hover:bg-emerald-800 hover:shadow-emerald-800/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-lg flex justify-center items-center gap-2">
