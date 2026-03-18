@@ -245,18 +245,26 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                 const canvas = await html2canvas(kad, {
                     scale: 2,
                     useCORS: true,
-                    backgroundColor: null
+                    backgroundColor: null,
+                    logging: false
                 });
                 
-                const link = document.createElement('a');
-                link.download = 'KadRaya-<?= $kad['nama_pengirim'] ?>.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
+                canvas.toBlob((blob) => {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    const fileName = 'KadRaya-<?= addslashes(preg_replace('/[^A-Za-z0-9_\-]/', '_', $kad['nama_pengirim'])) ?>.png';
+                    link.download = fileName;
+                    link.href = url;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                    overlay.classList.add('hidden');
+                    overlay.classList.remove('flex');
+                }, 'image/png');
             } catch (err) {
-                alert("Gagal menjana gambar. Sila cuba lagi.");
-            } finally {
+                console.error("Image Capture Error:", err);
                 overlay.classList.add('hidden');
                 overlay.classList.remove('flex');
+                alert("Gagal menjana gambar. Sila cuba lagi.");
             }
         }
 
@@ -272,19 +280,19 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
             if(audioToggle) audioToggle.style.display = 'none';
 
             const frames = [];
-            const frameCount = 4; // Minimal frames for animation
-            const captureInterval = 400; 
+            const frameCount = 3; // Minimum frames for very low memory
+            const captureInterval = 500; 
 
             try {
                 for (let i = 0; i < frameCount; i++) {
                     loadingText.innerText = `Merakam: ${Math.round(((i + 1) / frameCount) * 100)}%`;
                     const canvas = await html2canvas(kad, {
-                        scale: 0.4, // Extreme low scale for memory
+                        scale: 0.35, // Even lower scale
                         useCORS: true,
                         logging: false,
-                        backgroundColor: null
+                        backgroundColor: '#064e3b' // Static color instead of null to save processing
                     });
-                    frames.push(canvas.toDataURL('image/png'));
+                    frames.push(canvas.toDataURL('image/jpeg', 0.5)); // JPEG is lighter than PNG for frames
                     await new Promise(resolve => setTimeout(resolve, captureInterval));
                 }
 
@@ -292,17 +300,18 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
 
                 gifshot.createGIF({
                     images: frames,
-                    gifWidth: 280, // Smaller width
-                    gifHeight: (kad.offsetHeight / kad.offsetWidth) * 280,
-                    interval: 0.25,
+                    gifWidth: 240, 
+                    gifHeight: (kad.offsetHeight / kad.offsetWidth) * 240,
+                    interval: 0.3,
                     numFrames: frameCount,
                     frameDuration: 1,
-                    sampleInterval: 30 // Lower quality for better memory
+                    sampleInterval: 50 // Faster processing
                 }, function(obj) {
                     if(audioToggle) audioToggle.style.display = 'block';
                     if (!obj.error) {
                         const link = document.createElement('a');
-                        link.download = 'KadRaya-<?= $kad['nama_pengirim'] ?>.gif';
+                        const fileName = 'KadRaya-<?= addslashes(preg_replace('/[^A-Za-z0-9_\-]/', '_', $kad['nama_pengirim'])) ?>.gif';
+                        link.download = fileName;
                         link.href = obj.image;
                         link.click();
                         overlay.classList.add('hidden');
@@ -311,7 +320,7 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                         console.error("Gifshot Error:", obj.error);
                         overlay.classList.add('hidden');
                         overlay.classList.remove('flex');
-                        alert("Gagal menjana GIF. Sila gunakan 'Simpan Gambar' sahaja.");
+                        alert("Fail GIF terlalu besar untuk memori telefon anda.");
                     }
                 });
             } catch (err) {
@@ -319,7 +328,7 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                 if(audioToggle) audioToggle.style.display = 'block';
                 overlay.classList.add('hidden');
                 overlay.classList.remove('flex');
-                alert("Telefon anda kekurangan memori untuk GIF. Sila guna 'Simpan Gambar'.");
+                alert("Browser anda menghalang penjanaan GIF (Memori Rendah).");
             }
         }
 
