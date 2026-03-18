@@ -272,14 +272,14 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
             if(audioToggle) audioToggle.style.display = 'none';
 
             const frames = [];
-            const frameCount = 6; // Reduced for mobile stability
-            const captureInterval = 300; 
+            const frameCount = 4; // Minimal frames for animation
+            const captureInterval = 400; 
 
             try {
                 for (let i = 0; i < frameCount; i++) {
                     loadingText.innerText = `Merakam: ${Math.round(((i + 1) / frameCount) * 100)}%`;
                     const canvas = await html2canvas(kad, {
-                        scale: 0.6, // Lower scale for GIF processing
+                        scale: 0.4, // Extreme low scale for memory
                         useCORS: true,
                         logging: false,
                         backgroundColor: null
@@ -292,12 +292,12 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
 
                 gifshot.createGIF({
                     images: frames,
-                    gifWidth: 320,
-                    gifHeight: (kad.offsetHeight / kad.offsetWidth) * 320,
-                    interval: 0.2,
+                    gifWidth: 280, // Smaller width
+                    gifHeight: (kad.offsetHeight / kad.offsetWidth) * 280,
+                    interval: 0.25,
                     numFrames: frameCount,
                     frameDuration: 1,
-                    sampleInterval: 20
+                    sampleInterval: 30 // Lower quality for better memory
                 }, function(obj) {
                     if(audioToggle) audioToggle.style.display = 'block';
                     if (!obj.error) {
