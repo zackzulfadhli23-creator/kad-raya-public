@@ -58,6 +58,16 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.4.5/gifshot.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <!-- Open Graph Tags -->
+    <meta property="og:title" content="Kad Raya dari <?= htmlspecialchars($kad['nama_pengirim']) ?>">
+    <meta property="og:description" content="Selamat Hari Raya Maaf Zahir & Batin! Lihat ucapan istimewa untuk anda.">
+    <meta property="og:image" content="<?= !empty($kad['image_path']) ? $current_url . '/../' . $kad['image_path'] : '' ?>">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="<?= $current_url ?>">
+    
+    <link rel="icon" href="https://img.icons8.com/color/48/star-and-crescent.png">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #111827; }
         .font-playfair { font-family: 'Playfair Display', serif; }
@@ -145,6 +155,15 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                 <div class="absolute bottom-4 left-4 w-12 h-12 border-b-2 border-l-2 border-amber-400/50 rounded-bl-xl pointer-events-none"></div>
                 <div class="absolute bottom-4 right-4 w-12 h-12 border-b-2 border-r-2 border-amber-400/50 rounded-br-xl pointer-events-none"></div>
 
+                <!-- Audio Toggle -->
+                <button id="music-toggle" class="absolute top-4 right-4 z-30 p-2 rounded-full bg-black/30 text-amber-400 hover:bg-black/50 transition-all border border-amber-400/30">
+                    <svg id="music-on-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                    <svg id="music-off-icon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg>
+                </button>
+                <audio id="bg-music" loop>
+                    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+                </audio>
+
                 <div class="mb-6 mt-4 opacity-90 animate__animated animate__pulse animate__infinite animate__slower">
                     <svg class="mx-auto w-16 h-16 <?= $accent_color ?>" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" /></svg>
                 </div>
@@ -196,8 +215,12 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                     </button>
                 </div>
                 
-                <br>
-                <a href="index.php" class="block text-center text-gray-400 text-sm hover:text-white mt-4 border-t border-gray-700/50 pt-4 transition-colors">Bina Kad Anda Sendiri</a>
+                <div class="mt-6 flex flex-col items-center gap-4 border-t border-gray-700/30 pt-6">
+                    <p class="text-xs text-gray-400 font-medium">Scan untuk lihat di telefon</p>
+                    <div id="qrcode" class="bg-white p-2 rounded-lg shadow-inner"></div>
+                </div>
+
+                <a href="index.php" class="block text-center text-gray-400 text-sm hover:text-white mt-6 pt-4 border-t border-gray-800 transition-colors">Bina Kad Anda Sendiri</a>
             </div>
         </div>
     </div>
@@ -245,19 +268,21 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
             const kad = document.getElementById('kad-to-capture');
             const overlay = document.getElementById('loading-overlay');
             const loadingText = document.getElementById('loading-text');
+            const audioToggle = document.getElementById('music-toggle');
             
             overlay.classList.remove('hidden');
             loadingText.innerText = "Merakam Animasi (Sila tunggu sebentar)...";
+            audioToggle.style.display = 'none'; // Sembunyikan music toggle semasa merakam
 
             const frames = [];
             const frameCount = 15;
-            const captureInterval = 150; // Capture every 150ms
+            const captureInterval = 150; 
 
             try {
                 for (let i = 0; i < frameCount; i++) {
                     loadingText.innerText = `Merakam Bingkai ${i + 1}/${frameCount}...`;
                     const canvas = await html2canvas(kad, {
-                        scale: 1, // Keep scale 1 for smaller GIF size
+                        scale: 1,
                         useCORS: true,
                         backgroundColor: null
                     });
@@ -275,6 +300,7 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                     numFrames: frameCount,
                     frameDuration: 1
                 }, function(obj) {
+                    audioToggle.style.display = 'block';
                     if (!obj.error) {
                         const link = document.createElement('a');
                         link.download = 'KadRaya-<?= $kad['nama_pengirim'] ?>.gif';
@@ -287,10 +313,42 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                     }
                 });
             } catch (err) {
+                audioToggle.style.display = 'block';
                 overlay.classList.add('hidden');
                 alert("Ralat berlaku semasa menjana GIF.");
             }
         }
+
+        // QR Code & Music Logic
+        document.addEventListener("DOMContentLoaded", function() {
+            // QR Code
+            new QRCode(document.getElementById("qrcode"), {
+                text: "<?= $current_url ?>",
+                width: 80,
+                height: 80,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+
+            // Music Toggle
+            const audio = document.getElementById('bg-music');
+            const musicToggle = document.getElementById('music-toggle');
+            const onIcon = document.getElementById('music-on-icon');
+            const offIcon = document.getElementById('music-off-icon');
+
+            musicToggle.addEventListener('click', () => {
+                if (audio.paused) {
+                    audio.play();
+                    onIcon.classList.add('hidden');
+                    offIcon.classList.remove('hidden');
+                } else {
+                    audio.pause();
+                    onIcon.classList.remove('hidden');
+                    offIcon.classList.add('hidden');
+                }
+            });
+        });
 
         // Generate falling stars
         document.addEventListener("DOMContentLoaded", function() {

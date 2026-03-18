@@ -38,8 +38,11 @@
                     <input type="text" name="penerima" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors bg-gray-50" placeholder="Contoh: Keluarga Tersayang">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Mesej Ucapan</label>
-                    <textarea name="mesej" required rows="3" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors bg-gray-50 resize-none" placeholder="Tulis ucapan ikhlas anda di sini..."></textarea>
+                    <label class="block text-sm font-medium text-gray-700 mb-1 flex justify-between">
+                        Mesej Ucapan
+                        <span id="char-count" class="text-xs text-gray-400">0 / 300</span>
+                    </label>
+                    <textarea name="mesej" id="mesej-input" required rows="3" maxlength="300" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors bg-gray-50 resize-none" placeholder="Tulis ucapan ikhlas anda di sini..."></textarea>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tema Warna</label>
@@ -59,7 +62,16 @@
                             <span id="file-name" class="text-sm text-gray-600 font-medium truncate">Tekan untuk pilih gambar...</span>
                         </div>
                     </label>
-                    <input type="file" id="gambar-input" name="gambar" accept="image/*" class="hidden" onchange="document.getElementById('file-name').textContent = this.files.length > 0 ? this.files[0].name : 'Tekan untuk pilih gambar...'">
+                    <input type="file" id="gambar-input" name="gambar" accept="image/*" class="hidden">
+                    
+                    <!-- Image Preview Container -->
+                    <div id="image-preview-container" class="hidden mt-4 relative inline-block">
+                        <img id="image-preview" src="#" alt="Preview" class="max-h-32 rounded-lg border-2 border-emerald-200 shadow-sm">
+                        <button type="button" id="remove-image" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+
                     <p class="text-xs text-gray-500 mt-2 text-center">Sokongan: JPG, PNG, GIF (Max: 5MB)</p>
                 </div>
                 <button type="submit" class="w-full bg-emerald-700 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-emerald-700/30 hover:bg-emerald-800 hover:shadow-emerald-800/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-lg flex justify-center items-center gap-2">
@@ -68,5 +80,49 @@
             </form>
         </div>
     </div>
+
+    <script>
+        // Character Counter
+        const mesejInput = document.getElementById('mesej-input');
+        const charCount = document.getElementById('char-count');
+        
+        mesejInput.addEventListener('input', () => {
+            const count = mesejInput.value.length;
+            charCount.textContent = `${count} / 300`;
+            if (count >= 280) {
+                charCount.classList.add('text-amber-500');
+            } else {
+                charCount.classList.remove('text-amber-500');
+            }
+        });
+
+        // Image Preview
+        const gambarInput = document.getElementById('gambar-input');
+        const fileNameLabel = document.getElementById('file-name');
+        const previewContainer = document.getElementById('image-preview-container');
+        const previewImage = document.getElementById('image-preview');
+        const removeBtn = document.getElementById('remove-image');
+
+        gambarInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const file = this.files[0];
+                fileNameLabel.textContent = file.name;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewContainer.classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        removeBtn.addEventListener('click', () => {
+            gambarInput.value = '';
+            fileNameLabel.textContent = 'Tekan untuk pilih gambar...';
+            previewContainer.classList.add('hidden');
+            previewImage.src = '#';
+        });
+    </script>
 </body>
 </html>

@@ -35,18 +35,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $unique_id = substr(md5(uniqid(rand(), true)), 0, 8);
     
     try {
+        // Sanitize input
+        $s_pengirim = htmlspecialchars(strip_tags($pengirim));
+        $s_penerima = htmlspecialchars(strip_tags($penerima));
+        $s_mesej = $mesej; // Handled in view.php
+        $s_tema = htmlspecialchars(strip_tags($tema));
+
         $stmt = $conn->prepare("INSERT INTO ucapan_raya (unique_id, nama_pengirim, nama_penerima, mesej, tema_warna, image_path) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssssss", $unique_id, $pengirim, $penerima, $mesej, $tema, $image_path);
+        $stmt->bind_param("ssssss", $unique_id, $s_pengirim, $s_penerima, $s_mesej, $s_tema, $image_path);
         
         if ($stmt->execute()) {
             header("Location: view.php?id=" . $unique_id);
             exit();
         } else {
-            echo "Ralat Pelaksanaan: " . $stmt->error;
+            throw new Exception("Ralat Pelaksanaan: " . $stmt->error);
         }
-        $stmt->close();
     } catch (Exception $e) {
-         die("<h3>Ralat Pangkalan Data</h3><p>Jadual 'ucapan_raya' mungkin belum wujud.</p><p>Sila pastikan anda melawati <a href='db_setup.php'>Pautan Setup (db_setup.php)</a> terlebih dahulu.</p> <br><small>Error detail: " . $e->getMessage() . "</small>");
+         die("<h3>Ralat Pangkalan Data</h3><p>Gagal menyimpan ucapan.</p> <br><small>Error detail: " . $e->getMessage() . "</small>");
+    } finally {
+        if (isset($stmt)) $stmt->close();
     }
 }
 $conn->close();
