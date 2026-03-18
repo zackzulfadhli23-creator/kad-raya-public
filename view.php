@@ -226,6 +226,12 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
     </div>
 
     <script>
+        window.onerror = function(msg, url, line) {
+            console.error("Global Error: " + msg + " at " + url + ":" + line);
+            // alert("Ralat dikesan: " + msg); // Uncomment for aggressive debugging
+            return false;
+        };
+
         function copyLink() {
             navigator.clipboard.writeText("<?= $current_url ?>").then(() => {
                 const toast = document.getElementById('copy-toast');
@@ -244,13 +250,14 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
             const loadingText = document.getElementById('loading-text');
             
             overlay.classList.remove('hidden');
-            loadingText.innerText = "Menjana Gambar...";
+            loadingText.innerText = "Sila tunggu, sedang menjana gambar...";
 
             try {
                 const canvas = await html2canvas(kad, {
-                    scale: 2,
+                    scale: 1.5, // Slightly reduced scale for mobile performance
                     useCORS: true,
-                    backgroundColor: null
+                    logging: false,
+                    allowTaint: true
                 });
                 
                 const link = document.createElement('a');
@@ -258,7 +265,8 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                 link.href = canvas.toDataURL('image/png');
                 link.click();
             } catch (err) {
-                alert("Gagal menjana gambar. Sila cuba lagi.");
+                console.error(err);
+                alert("Kesalahan berlaku: " + err.message);
             } finally {
                 overlay.classList.add('hidden');
             }
@@ -271,36 +279,36 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
             const audioToggle = document.getElementById('music-toggle');
             
             overlay.classList.remove('hidden');
-            loadingText.innerText = "Merakam Animasi (Sila tunggu sebentar)...";
-            audioToggle.style.display = 'none'; // Sembunyikan music toggle semasa merakam
+            loadingText.innerText = "Merakam Animasi (Sila tunggu)...";
+            if(audioToggle) audioToggle.style.display = 'none';
 
             const frames = [];
-            const frameCount = 15;
-            const captureInterval = 150; 
+            const maxFrames = 8; // Reduced for mobile memory
+            const captureInterval = 250; 
 
             try {
-                for (let i = 0; i < frameCount; i++) {
-                    loadingText.innerText = `Merakam Bingkai ${i + 1}/${frameCount}...`;
+                for (let i = 0; i < maxFrames; i++) {
+                    loadingText.innerText = `Merakam: ${Math.round(((i + 1) / maxFrames) * 100)}%`;
                     const canvas = await html2canvas(kad, {
-                        scale: 1,
+                        scale: 0.8, // Reduced scale for GIF speed
                         useCORS: true,
-                        backgroundColor: null
+                        allowTaint: true
                     });
                     frames.push(canvas.toDataURL('image/png'));
                     await new Promise(resolve => setTimeout(resolve, captureInterval));
                 }
 
-                loadingText.innerText = "Menjana GIF...";
+                loadingText.innerText = "Menjana fail GIF...";
 
                 gifshot.createGIF({
                     images: frames,
-                    gifWidth: kad.offsetWidth,
-                    gifHeight: kad.offsetHeight,
-                    interval: 0.1,
-                    numFrames: frameCount,
+                    gifWidth: 350, // Fixed width for mobile efficiency
+                    gifHeight: (kad.offsetHeight / kad.offsetWidth) * 350,
+                    interval: 0.2,
+                    numFrames: maxFrames,
                     frameDuration: 1
                 }, function(obj) {
-                    audioToggle.style.display = 'block';
+                    if(audioToggle) audioToggle.style.display = 'block';
                     if (!obj.error) {
                         const link = document.createElement('a');
                         link.download = 'KadRaya-<?= $kad['nama_pengirim'] ?>.gif';
@@ -309,13 +317,13 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                         overlay.classList.add('hidden');
                     } else {
                         overlay.classList.add('hidden');
-                        alert("Gagal menjana GIF.");
+                        alert("Gagal menjana GIF: " + obj.errorMsg);
                     }
                 });
             } catch (err) {
-                audioToggle.style.display = 'block';
+                if(audioToggle) audioToggle.style.display = 'block';
                 overlay.classList.add('hidden');
-                alert("Ralat berlaku semasa menjana GIF.");
+                alert("Ralat: " + err.message);
             }
         }
 
