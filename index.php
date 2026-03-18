@@ -42,7 +42,7 @@
                         Mesej Ucapan
                         <span id="char-count" class="text-xs text-gray-400">0 / 300</span>
                     </label>
-                    <textarea name="mesej" id="mesej-input" required rows="3" maxlength="300" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors bg-gray-50 resize-none" placeholder="Tulis ucapan ikhlas anda di sini..."></textarea>
+                    <textarea name="mesej" id="mesej-input" required rows="3" maxlength="600" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors bg-gray-50 resize-none" placeholder="Tulis ucapan ikhlas anda di sini..."></textarea>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tema Warna</label>
@@ -88,7 +88,7 @@
         
         mesejInput.addEventListener('input', () => {
             const count = mesejInput.value.length;
-            charCount.textContent = `${count} / 300`;
+            charCount.textContent = `${count} / 600`;
             if (count >= 280) {
                 charCount.classList.add('text-amber-500');
             } else {

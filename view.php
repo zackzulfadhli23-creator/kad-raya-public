@@ -153,9 +153,7 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                     <svg id="music-on-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
                     <svg id="music-off-icon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg>
                 </button>
-                <audio id="bg-music" loop>
-                    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
-                </audio>
+                <audio id="bg-music" loop preload="auto" src="assets/audio/Jom_Raya.mp3"></audio>
 
                 <div class="mb-6 mt-4 opacity-90 animate__animated animate__pulse animate__infinite animate__slower">
                     <svg class="mx-auto w-16 h-16 <?= $accent_color ?>" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" /></svg>
@@ -282,13 +280,30 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
             const offIcon = document.getElementById('music-off-icon');
 
             if(musicToggle) {
+                // Audio Debugging
+                console.log("Audio element initialized:", audio);
+                
+                audio.addEventListener('canplaythrough', () => {
+                    console.log("Audio is ready to play");
+                });
+
+                audio.addEventListener('error', (e) => {
+                    console.error("Audio error:", audio.error);
+                });
+
                 musicToggle.addEventListener('click', () => {
+                    console.log("Toggle clicked. Current status: " + (audio.paused ? "paused" : "playing"));
                     if (audio.paused) {
-                        audio.play();
+                        audio.play().then(() => {
+                            console.log("Playback started successfully");
+                        }).catch(err => {
+                            console.error("Playback failed:", err);
+                        });
                         onIcon.classList.add('hidden');
                         offIcon.classList.remove('hidden');
                     } else {
                         audio.pause();
+                        console.log("Audio paused");
                         onIcon.classList.remove('hidden');
                         offIcon.classList.add('hidden');
                     }
