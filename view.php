@@ -139,9 +139,20 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
     <!-- CSS Animation Elements -->
     <div id="stars-container" class="absolute inset-0 pointer-events-none overflow-hidden z-0"></div>
 
-    <div id="loading-overlay" class="hidden">
-        <div class="spinner mb-4"></div>
-        <p class="text-amber-400 font-medium animate-pulse" id="loading-text">Sedang memproses...</p>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] hidden flex flex-col items-center justify-center p-6 text-center">
+        <div class="relative">
+            <div class="w-16 h-16 border-4 border-amber-400/20 border-t-amber-400 rounded-full animate-spin mb-4"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <div class="w-8 h-8 border-4 border-emerald-400/20 border-t-emerald-400 rounded-full animate-spin-slow"></div>
+            </div>
+        </div>
+        <p id="loading-text" class="text-amber-400 font-medium animate-pulse text-lg mb-2">Sedang memproses...</p>
+        <p id="loading-subtext" class="text-gray-400 text-xs mb-6">Sila jangan tutup pelayar anda</p>
+        
+        <button onclick="cancelProcess()" class="px-6 py-2 rounded-full border border-gray-600 text-gray-400 hover:text-white hover:border-white transition-all text-sm">
+            Batal
+        </button>
     </div>
 
     <div class="card-container z-10">
@@ -232,82 +243,106 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
             return false;
         };
 
-        function copyLink() {
-            navigator.clipboard.writeText("<?= $current_url ?>").then(() => {
-                const toast = document.getElementById('copy-toast');
-                toast.classList.remove('hidden');
-                toast.classList.add('animate__animated', 'animate__fadeIn');
-                setTimeout(() => {
-                    toast.classList.add('hidden');
-                    toast.classList.remove('animate__animated', 'animate__fadeIn');
-                }, 3000);
-            });
+        let isCancelled = false;
+
+        function cancelProcess() {
+            isCancelled = true;
+            document.getElementById('loading-overlay').classList.add('hidden');
+            const audioToggle = document.getElementById('music-toggle');
+            if(audioToggle) audioToggle.style.display = 'block';
+            location.reload(); // Hard reset to stop any background workers
         }
 
         async function downloadImage() {
+            isCancelled = false;
             const kad = document.getElementById('kad-to-capture');
             const overlay = document.getElementById('loading-overlay');
             const loadingText = document.getElementById('loading-text');
             
             overlay.classList.remove('hidden');
-            loadingText.innerText = "Sila tunggu, sedang menjana gambar...";
+            loadingText.innerText = "Memulakan tangkapan...";
 
             try {
+                // Pre-load images to avoid html2canvas hang
+                const images = kad.getElementsByTagName('img');
+                for (let img of images) {
+                    if (!img.complete) {
+                        loadingText.innerText = "Memuat turun gambar...";
+                        await new Promise(resolve => {
+                            img.onload = img.onerror = resolve;
+                        });
+                    }
+                }
+
+                if(isCancelled) return;
+                loadingText.innerText = "Menjana fail imej...";
+
                 const canvas = await html2canvas(kad, {
-                    scale: 1.5, // Slightly reduced scale for mobile performance
+                    scale: 1.2, // Balanced for mobile
                     useCORS: true,
-                    logging: false,
-                    allowTaint: true
+                    logging: true,
+                    allowTaint: false,
+                    proxy: null,
+                    timeout: 15000 // 15s timeout
                 });
                 
+                if(isCancelled) return;
+
                 const link = document.createElement('a');
                 link.download = 'KadRaya-<?= $kad['nama_pengirim'] ?>.png';
                 link.href = canvas.toDataURL('image/png');
                 link.click();
             } catch (err) {
                 console.error(err);
-                alert("Kesalahan berlaku: " + err.message);
+                if(!isCancelled) alert("Maaf, gagal menjana imej. Sila gunakan 'Screenshot' telefon jika ia masih sangkut.");
             } finally {
-                overlay.classList.add('hidden');
+                if(!isCancelled) overlay.classList.add('hidden');
             }
         }
 
         async function downloadGif() {
+            isCancelled = false;
             const kad = document.getElementById('kad-to-capture');
             const overlay = document.getElementById('loading-overlay');
             const loadingText = document.getElementById('loading-text');
             const audioToggle = document.getElementById('music-toggle');
             
             overlay.classList.remove('hidden');
-            loadingText.innerText = "Merakam Animasi (Sila tunggu)...";
+            loadingText.innerText = "Merakam (Sila tunggu)...";
             if(audioToggle) audioToggle.style.display = 'none';
 
             const frames = [];
-            const maxFrames = 8; // Reduced for mobile memory
-            const captureInterval = 250; 
+            const maxFrames = 6; // Further reduced for stability
+            const captureInterval = 400; 
 
             try {
+                const stars = document.getElementById('stars-container');
+                
                 for (let i = 0; i < maxFrames; i++) {
+                    if(isCancelled) return;
                     loadingText.innerText = `Merakam: ${Math.round(((i + 1) / maxFrames) * 100)}%`;
+                    
                     const canvas = await html2canvas(kad, {
-                        scale: 0.8, // Reduced scale for GIF speed
+                        scale: 0.7,
                         useCORS: true,
-                        allowTaint: true
+                        allowTaint: false
                     });
                     frames.push(canvas.toDataURL('image/png'));
                     await new Promise(resolve => setTimeout(resolve, captureInterval));
                 }
 
-                loadingText.innerText = "Menjana fail GIF...";
+                if(isCancelled) return;
+                loadingText.innerText = "Membina fail GIF...";
 
                 gifshot.createGIF({
                     images: frames,
-                    gifWidth: 350, // Fixed width for mobile efficiency
-                    gifHeight: (kad.offsetHeight / kad.offsetWidth) * 350,
+                    gifWidth: 320,
+                    gifHeight: (kad.offsetHeight / kad.offsetWidth) * 320,
                     interval: 0.2,
                     numFrames: maxFrames,
                     frameDuration: 1
                 }, function(obj) {
+                    if(isCancelled) return;
                     if(audioToggle) audioToggle.style.display = 'block';
                     if (!obj.error) {
                         const link = document.createElement('a');
@@ -317,27 +352,31 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                         overlay.classList.add('hidden');
                     } else {
                         overlay.classList.add('hidden');
-                        alert("Gagal menjana GIF: " + obj.errorMsg);
+                        alert("Gagal bina GIF: Sila cuba 'Simpan Gambar' sahaja.");
                     }
                 });
             } catch (err) {
                 if(audioToggle) audioToggle.style.display = 'block';
-                overlay.classList.add('hidden');
-                alert("Ralat: " + err.message);
+                if(!isCancelled) {
+                    overlay.classList.add('hidden');
+                    alert("Ralat memproses. Sila cuba 'Simpan Gambar'.");
+                }
             }
         }
 
-        // QR Code & Music Logic
+        // Consolidated Logic
         document.addEventListener("DOMContentLoaded", function() {
             // QR Code
-            new QRCode(document.getElementById("qrcode"), {
-                text: "<?= $current_url ?>",
-                width: 80,
-                height: 80,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
-            });
+            try {
+                new QRCode(document.getElementById("qrcode"), {
+                    text: "<?= $current_url ?>",
+                    width: 100,
+                    height: 100,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+            } catch(e) { console.error("QR Code failed", e); }
 
             // Music Toggle
             const audio = document.getElementById('bg-music');
@@ -345,42 +384,35 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
             const onIcon = document.getElementById('music-on-icon');
             const offIcon = document.getElementById('music-off-icon');
 
-            musicToggle.addEventListener('click', () => {
-                if (audio.paused) {
-                    audio.play();
-                    onIcon.classList.add('hidden');
-                    offIcon.classList.remove('hidden');
-                } else {
-                    audio.pause();
-                    onIcon.classList.remove('hidden');
-                    offIcon.classList.add('hidden');
-                }
-            });
-        });
+            if(musicToggle && audio) {
+                musicToggle.addEventListener('click', () => {
+                    if (audio.paused) {
+                        audio.play();
+                        onIcon.classList.add('hidden');
+                        offIcon.classList.remove('hidden');
+                    } else {
+                        audio.pause();
+                        onIcon.classList.remove('hidden');
+                        offIcon.classList.add('hidden');
+                    }
+                });
+            }
 
-        // Generate falling stars
-        document.addEventListener("DOMContentLoaded", function() {
+            // Falling stars
             const container = document.getElementById('stars-container');
-            const starCount = 20;
-            const symbols = ['✦', '★', '❈', '✨'];
-            
-            for(let i=0; i<starCount; i++) {
-                const star = document.createElement('div');
-                star.className = 'star text-xs md:text-sm absolute';
-                star.innerHTML = symbols[Math.floor(Math.random() * symbols.length)];
-                
-                // Random properties
-                const left = Math.random() * 100;
-                const duration = 5 + Math.random() * 10;
-                const delay = Math.random() * 5;
-                const size = 0.5 + Math.random() * 1;
-                
-                star.style.left = left + '%';
-                star.style.animationDuration = duration + 's';
-                star.style.animationDelay = delay + 's';
-                star.style.transform = `scale(${size})`;
-                
-                container.appendChild(star);
+            if(container) {
+                const starCount = 15;
+                const symbols = ['✦', '★', '❈', '✨'];
+                for(let i=0; i<starCount; i++) {
+                    const star = document.createElement('div');
+                    star.className = 'star text-xs absolute';
+                    star.innerHTML = symbols[Math.floor(Math.random() * symbols.length)];
+                    star.style.left = (Math.random() * 100) + '%';
+                    star.style.animationDuration = (5 + Math.random() * 10) + 's';
+                    star.style.animationDelay = (Math.random() * 5) + 's';
+                    star.style.transform = `scale(${0.5 + Math.random()})`;
+                    container.appendChild(star);
+                }
             }
         });
     </script>
