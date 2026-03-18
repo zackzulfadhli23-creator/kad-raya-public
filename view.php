@@ -44,7 +44,8 @@ switch ($kad['tema_warna']) {
         break;
 }
 
-$current_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+$base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
+$current_url = $base_url . $_SERVER['REQUEST_URI'];
 $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " untuk anda di sini:\n\n" . $current_url);
 ?>
 <!DOCTYPE html>
@@ -63,7 +64,7 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
     <!-- Open Graph Tags -->
     <meta property="og:title" content="Kad Raya dari <?= htmlspecialchars($kad['nama_pengirim']) ?>">
     <meta property="og:description" content="Selamat Hari Raya Maaf Zahir & Batin! Lihat ucapan istimewa untuk anda.">
-    <meta property="og:image" content="<?= !empty($kad['image_path']) ? $current_url . '/../' . $kad['image_path'] : '' ?>">
+    <meta property="og:image" content="<?= !empty($kad['image_path']) ? $base_url . '/' . $kad['image_path'] : '' ?>">
     <meta property="og:type" content="website">
     <meta property="og:url" content="<?= $current_url ?>">
     
@@ -141,18 +142,8 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
 
     <!-- Loading Overlay -->
     <div id="loading-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] hidden flex flex-col items-center justify-center p-6 text-center">
-        <div class="relative">
-            <div class="w-16 h-16 border-4 border-amber-400/20 border-t-amber-400 rounded-full animate-spin mb-4"></div>
-            <div class="absolute inset-0 flex items-center justify-center">
-                <div class="w-8 h-8 border-4 border-emerald-400/20 border-t-emerald-400 rounded-full animate-spin-slow"></div>
-            </div>
-        </div>
-        <p id="loading-text" class="text-amber-400 font-medium animate-pulse text-lg mb-2">Sedang memproses...</p>
-        <p id="loading-subtext" class="text-gray-400 text-xs mb-6">Sila jangan tutup pelayar anda</p>
-        
-        <button onclick="cancelProcess()" class="px-6 py-2 rounded-full border border-gray-600 text-gray-400 hover:text-white hover:border-white transition-all text-sm">
-            Batal
-        </button>
+        <div class="w-16 h-16 border-4 border-amber-400/20 border-t-amber-400 rounded-full animate-spin mb-4"></div>
+        <p id="loading-text" class="text-amber-400 font-medium animate-pulse text-lg">Sedang memproses...</p>
     </div>
 
     <div class="card-container z-10">
@@ -237,112 +228,80 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
     </div>
 
     <script>
-        window.onerror = function(msg, url, line) {
-            console.error("Global Error: " + msg + " at " + url + ":" + line);
-            // alert("Ralat dikesan: " + msg); // Uncomment for aggressive debugging
-            return false;
-        };
-
-        let isCancelled = false;
-
-        function cancelProcess() {
-            isCancelled = true;
-            document.getElementById('loading-overlay').classList.add('hidden');
-            const audioToggle = document.getElementById('music-toggle');
-            if(audioToggle) audioToggle.style.display = 'block';
-            location.reload(); // Hard reset to stop any background workers
+        function copyLink() {
+            navigator.clipboard.writeText("<?= $current_url ?>").then(() => {
+                const toast = document.getElementById('copy-toast');
+                toast.classList.remove('hidden');
+                toast.classList.add('animate__animated', 'animate__fadeIn');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                    toast.classList.remove('animate__animated', 'animate__fadeIn');
+                }, 3000);
+            });
         }
 
         async function downloadImage() {
-            isCancelled = false;
             const kad = document.getElementById('kad-to-capture');
             const overlay = document.getElementById('loading-overlay');
             const loadingText = document.getElementById('loading-text');
             
             overlay.classList.remove('hidden');
-            loadingText.innerText = "Memulakan tangkapan...";
+            loadingText.innerText = "Menjana Gambar...";
 
             try {
-                // Pre-load images to avoid html2canvas hang
-                const images = kad.getElementsByTagName('img');
-                for (let img of images) {
-                    if (!img.complete) {
-                        loadingText.innerText = "Memuat turun gambar...";
-                        await new Promise(resolve => {
-                            img.onload = img.onerror = resolve;
-                        });
-                    }
-                }
-
-                if(isCancelled) return;
-                loadingText.innerText = "Menjana fail imej...";
-
                 const canvas = await html2canvas(kad, {
-                    scale: 1.2, // Balanced for mobile
+                    scale: 2,
                     useCORS: true,
-                    logging: true,
-                    allowTaint: false,
-                    proxy: null,
-                    timeout: 15000 // 15s timeout
+                    backgroundColor: null
                 });
                 
-                if(isCancelled) return;
-
                 const link = document.createElement('a');
                 link.download = 'KadRaya-<?= $kad['nama_pengirim'] ?>.png';
                 link.href = canvas.toDataURL('image/png');
                 link.click();
             } catch (err) {
-                console.error(err);
-                if(!isCancelled) alert("Maaf, gagal menjana imej. Sila gunakan 'Screenshot' telefon jika ia masih sangkut.");
+                alert("Gagal menjana gambar. Sila cuba lagi.");
             } finally {
-                if(!isCancelled) overlay.classList.add('hidden');
+                overlay.classList.add('hidden');
             }
         }
 
         async function downloadGif() {
-            isCancelled = false;
             const kad = document.getElementById('kad-to-capture');
             const overlay = document.getElementById('loading-overlay');
             const loadingText = document.getElementById('loading-text');
             const audioToggle = document.getElementById('music-toggle');
             
             overlay.classList.remove('hidden');
-            loadingText.innerText = "Merakam (Sila tunggu)...";
+            loadingText.innerText = "Merakam Animasi (Sila tunggu)...";
             if(audioToggle) audioToggle.style.display = 'none';
 
             const frames = [];
-            const maxFrames = 6; // Further reduced for stability
-            const captureInterval = 400; 
+            const frameCount = 10;
+            const captureInterval = 200; 
 
             try {
-                const stars = document.getElementById('stars-container');
-                
-                for (let i = 0; i < maxFrames; i++) {
-                    if(isCancelled) return;
-                    loadingText.innerText = `Merakam: ${Math.round(((i + 1) / maxFrames) * 100)}%`;
-                    
+                for (let i = 0; i < frameCount; i++) {
+                    loadingText.innerText = `Merakam Bingkai ${i + 1}/${frameCount}...`;
                     const canvas = await html2canvas(kad, {
-                        scale: 0.7,
+                        scale: 1,
                         useCORS: true,
-                        allowTaint: false
+                        backgroundColor: null
                     });
                     frames.push(canvas.toDataURL('image/png'));
                     await new Promise(resolve => setTimeout(resolve, captureInterval));
                 }
 
-                if(isCancelled) return;
-                loadingText.innerText = "Membina fail GIF...";
+                loadingText.innerText = "Menjana GIF...";
 
                 gifshot.createGIF({
                     images: frames,
-                    gifWidth: 320,
-                    gifHeight: (kad.offsetHeight / kad.offsetWidth) * 320,
-                    interval: 0.2,
-                    numFrames: maxFrames,
+                    gifWidth: kad.offsetWidth > 400 ? 400 : kad.offsetWidth,
+                    gifHeight: (kad.offsetHeight / kad.offsetWidth) * (kad.offsetWidth > 400 ? 400 : kad.offsetWidth),
+                    interval: 0.1,
+                    numFrames: frameCount,
                     frameDuration: 1
                 }, function(obj) {
-                    if(isCancelled) return;
                     if(audioToggle) audioToggle.style.display = 'block';
                     if (!obj.error) {
                         const link = document.createElement('a');
@@ -352,31 +311,27 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                         overlay.classList.add('hidden');
                     } else {
                         overlay.classList.add('hidden');
-                        alert("Gagal bina GIF: Sila cuba 'Simpan Gambar' sahaja.");
+                        alert("Gagal menjana GIF.");
                     }
                 });
             } catch (err) {
                 if(audioToggle) audioToggle.style.display = 'block';
-                if(!isCancelled) {
-                    overlay.classList.add('hidden');
-                    alert("Ralat memproses. Sila cuba 'Simpan Gambar'.");
-                }
+                overlay.classList.add('hidden');
+                alert("Ralat berlaku semasa menjana GIF.");
             }
         }
 
-        // Consolidated Logic
+        // QR Code & Music Logic
         document.addEventListener("DOMContentLoaded", function() {
             // QR Code
-            try {
-                new QRCode(document.getElementById("qrcode"), {
-                    text: "<?= $current_url ?>",
-                    width: 100,
-                    height: 100,
-                    colorDark : "#000000",
-                    colorLight : "#ffffff",
-                    correctLevel : QRCode.CorrectLevel.H
-                });
-            } catch(e) { console.error("QR Code failed", e); }
+            new QRCode(document.getElementById("qrcode"), {
+                text: "<?= $current_url ?>",
+                width: 80,
+                height: 80,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
 
             // Music Toggle
             const audio = document.getElementById('bg-music');
@@ -384,7 +339,7 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
             const onIcon = document.getElementById('music-on-icon');
             const offIcon = document.getElementById('music-off-icon');
 
-            if(musicToggle && audio) {
+            if(musicToggle) {
                 musicToggle.addEventListener('click', () => {
                     if (audio.paused) {
                         audio.play();
@@ -397,22 +352,31 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                     }
                 });
             }
+        });
 
-            // Falling stars
+        // Generate falling stars
+        document.addEventListener("DOMContentLoaded", function() {
             const container = document.getElementById('stars-container');
-            if(container) {
-                const starCount = 15;
-                const symbols = ['✦', '★', '❈', '✨'];
-                for(let i=0; i<starCount; i++) {
-                    const star = document.createElement('div');
-                    star.className = 'star text-xs absolute';
-                    star.innerHTML = symbols[Math.floor(Math.random() * symbols.length)];
-                    star.style.left = (Math.random() * 100) + '%';
-                    star.style.animationDuration = (5 + Math.random() * 10) + 's';
-                    star.style.animationDelay = (Math.random() * 5) + 's';
-                    star.style.transform = `scale(${0.5 + Math.random()})`;
-                    container.appendChild(star);
-                }
+            const starCount = 20;
+            const symbols = ['✦', '★', '❈', '✨'];
+            
+            for(let i=0; i<starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star text-xs md:text-sm absolute';
+                star.innerHTML = symbols[Math.floor(Math.random() * symbols.length)];
+                
+                // Random properties
+                const left = Math.random() * 100;
+                const duration = 5 + Math.random() * 10;
+                const delay = Math.random() * 5;
+                const size = 0.5 + Math.random() * 1;
+                
+                star.style.left = left + '%';
+                star.style.animationDuration = duration + 's';
+                star.style.animationDelay = delay + 's';
+                star.style.transform = `scale(${size})`;
+                
+                container.appendChild(star);
             }
         });
     </script>
