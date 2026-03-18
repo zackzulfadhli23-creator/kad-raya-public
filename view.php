@@ -109,15 +109,7 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
         }
 
         #loading-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 50;
-            backdrop-filter: blur(4px);
+            z-index: 100;
         }
 
         .spinner {
@@ -141,7 +133,7 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
     <div id="stars-container" class="absolute inset-0 pointer-events-none overflow-hidden z-0"></div>
 
     <!-- Loading Overlay -->
-    <div id="loading-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] hidden flex flex-col items-center justify-center p-6 text-center">
+    <div id="loading-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] hidden flex-col items-center justify-center p-6 text-center">
         <div class="w-16 h-16 border-4 border-amber-400/20 border-t-amber-400 rounded-full animate-spin mb-4"></div>
         <p id="loading-text" class="text-amber-400 font-medium animate-pulse text-lg">Sedang memproses...</p>
     </div>
@@ -246,6 +238,7 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
             const loadingText = document.getElementById('loading-text');
             
             overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
             loadingText.innerText = "Menjana Gambar...";
 
             try {
@@ -263,6 +256,7 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                 alert("Gagal menjana gambar. Sila cuba lagi.");
             } finally {
                 overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
             }
         }
 
@@ -273,6 +267,7 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
             const audioToggle = document.getElementById('music-toggle');
             
             overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
             loadingText.innerText = "Merakam Animasi (Sila tunggu)...";
             if(audioToggle) audioToggle.style.display = 'none';
 
@@ -309,14 +304,17 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                         link.href = obj.image;
                         link.click();
                         overlay.classList.add('hidden');
+                        overlay.classList.remove('flex');
                     } else {
                         overlay.classList.add('hidden');
+                        overlay.classList.remove('flex');
                         alert("Gagal menjana GIF.");
                     }
                 });
             } catch (err) {
                 if(audioToggle) audioToggle.style.display = 'block';
                 overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
                 alert("Ralat berlaku semasa menjana GIF.");
             }
         }
