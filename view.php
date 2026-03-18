@@ -268,34 +268,36 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
             
             overlay.classList.remove('hidden');
             overlay.classList.add('flex');
-            loadingText.innerText = "Merakam Animasi (Sila tunggu)...";
+            loadingText.innerText = "Merakam (Sila tunggu)...";
             if(audioToggle) audioToggle.style.display = 'none';
 
             const frames = [];
-            const frameCount = 10;
-            const captureInterval = 200; 
+            const frameCount = 6; // Reduced for mobile stability
+            const captureInterval = 300; 
 
             try {
                 for (let i = 0; i < frameCount; i++) {
-                    loadingText.innerText = `Merakam Bingkai ${i + 1}/${frameCount}...`;
+                    loadingText.innerText = `Merakam: ${Math.round(((i + 1) / frameCount) * 100)}%`;
                     const canvas = await html2canvas(kad, {
-                        scale: 1,
+                        scale: 0.6, // Lower scale for GIF processing
                         useCORS: true,
+                        logging: false,
                         backgroundColor: null
                     });
                     frames.push(canvas.toDataURL('image/png'));
                     await new Promise(resolve => setTimeout(resolve, captureInterval));
                 }
 
-                loadingText.innerText = "Menjana GIF...";
+                loadingText.innerText = "Menjana Fail GIF...";
 
                 gifshot.createGIF({
                     images: frames,
-                    gifWidth: kad.offsetWidth > 400 ? 400 : kad.offsetWidth,
-                    gifHeight: (kad.offsetHeight / kad.offsetWidth) * (kad.offsetWidth > 400 ? 400 : kad.offsetWidth),
-                    interval: 0.1,
+                    gifWidth: 320,
+                    gifHeight: (kad.offsetHeight / kad.offsetWidth) * 320,
+                    interval: 0.2,
                     numFrames: frameCount,
-                    frameDuration: 1
+                    frameDuration: 1,
+                    sampleInterval: 20
                 }, function(obj) {
                     if(audioToggle) audioToggle.style.display = 'block';
                     if (!obj.error) {
@@ -306,16 +308,18 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                         overlay.classList.add('hidden');
                         overlay.classList.remove('flex');
                     } else {
+                        console.error("Gifshot Error:", obj.error);
                         overlay.classList.add('hidden');
                         overlay.classList.remove('flex');
-                        alert("Gagal menjana GIF.");
+                        alert("Gagal menjana GIF. Sila gunakan 'Simpan Gambar' sahaja.");
                     }
                 });
             } catch (err) {
+                console.error("Capture Error:", err);
                 if(audioToggle) audioToggle.style.display = 'block';
                 overlay.classList.add('hidden');
                 overlay.classList.remove('flex');
-                alert("Ralat berlaku semasa menjana GIF.");
+                alert("Telefon anda kekurangan memori untuk GIF. Sila guna 'Simpan Gambar'.");
             }
         }
 
