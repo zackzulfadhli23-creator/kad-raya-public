@@ -58,7 +58,6 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.4.5/gifshot.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <!-- Open Graph Tags -->
@@ -198,14 +197,10 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                 </button>
                 <div id="copy-toast" class="hidden text-center text-sm text-emerald-400 mt-2 font-medium bg-black/50 py-1 rounded-full backdrop-blur-sm">Link berjaya disalin!</div>
                 
-                <div class="grid grid-cols-2 gap-3 mt-4">
-                    <button onclick="downloadImage()" class="flex justify-center items-center gap-2 py-3 px-4 rounded-xl font-semibold transition-all shadow-lg transform hover:-translate-y-1 bg-blue-600 text-white hover:bg-blue-500 text-sm">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        Simpan Gambar
-                    </button>
-                    <button onclick="downloadGif()" class="flex justify-center items-center gap-2 py-3 px-4 rounded-xl font-semibold transition-all shadow-lg transform hover:-translate-y-1 bg-amber-600 text-white hover:bg-amber-500 text-sm">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                        Simpan GIF
+                <div class="mt-4">
+                    <button onclick="downloadImage()" class="w-full flex justify-center items-center gap-2 py-3.5 px-4 rounded-xl font-semibold transition-all shadow-lg transform hover:-translate-y-1 bg-blue-600 text-white hover:bg-blue-500">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        Simpan Gambar (PNG)
                     </button>
                 </div>
                 
@@ -265,70 +260,6 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                 overlay.classList.add('hidden');
                 overlay.classList.remove('flex');
                 alert("Gagal menjana gambar. Sila cuba lagi.");
-            }
-        }
-
-        async function downloadGif() {
-            const kad = document.getElementById('kad-to-capture');
-            const overlay = document.getElementById('loading-overlay');
-            const loadingText = document.getElementById('loading-text');
-            const audioToggle = document.getElementById('music-toggle');
-            
-            overlay.classList.remove('hidden');
-            overlay.classList.add('flex');
-            loadingText.innerText = "Merakam (Sila tunggu)...";
-            if(audioToggle) audioToggle.style.display = 'none';
-
-            const frames = [];
-            const frameCount = 3; // Minimum frames for very low memory
-            const captureInterval = 500; 
-
-            try {
-                for (let i = 0; i < frameCount; i++) {
-                    loadingText.innerText = `Merakam: ${Math.round(((i + 1) / frameCount) * 100)}%`;
-                    const canvas = await html2canvas(kad, {
-                        scale: 0.35, // Even lower scale
-                        useCORS: true,
-                        logging: false,
-                        backgroundColor: '#064e3b' // Static color instead of null to save processing
-                    });
-                    frames.push(canvas.toDataURL('image/jpeg', 0.5)); // JPEG is lighter than PNG for frames
-                    await new Promise(resolve => setTimeout(resolve, captureInterval));
-                }
-
-                loadingText.innerText = "Menjana Fail GIF...";
-
-                gifshot.createGIF({
-                    images: frames,
-                    gifWidth: 240, 
-                    gifHeight: (kad.offsetHeight / kad.offsetWidth) * 240,
-                    interval: 0.3,
-                    numFrames: frameCount,
-                    frameDuration: 1,
-                    sampleInterval: 50 // Faster processing
-                }, function(obj) {
-                    if(audioToggle) audioToggle.style.display = 'block';
-                    if (!obj.error) {
-                        const link = document.createElement('a');
-                        const fileName = 'KadRaya-<?= addslashes(preg_replace('/[^A-Za-z0-9_\-]/', '_', $kad['nama_pengirim'])) ?>.gif';
-                        link.download = fileName;
-                        link.href = obj.image;
-                        link.click();
-                        overlay.classList.add('hidden');
-                        overlay.classList.remove('flex');
-                    } else {
-                        console.error("Gifshot Error:", obj.error);
-                        overlay.classList.add('hidden');
-                        overlay.classList.remove('flex');
-                        alert("Fail GIF terlalu besar untuk memori telefon anda.");
-                    }
-                });
-            } catch (err) {
-                console.error("Capture Error:", err);
-                if(audioToggle) audioToggle.style.display = 'block';
-                overlay.classList.add('hidden');
-                overlay.classList.remove('flex');
-                alert("Browser anda menghalang penjanaan GIF (Memori Rendah).");
             }
         }
 
