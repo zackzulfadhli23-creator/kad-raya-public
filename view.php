@@ -56,6 +56,8 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.4.5/gifshot.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #111827; }
         .font-playfair { font-family: 'Playfair Display', serif; }
@@ -94,6 +96,32 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
             outline: 1px solid rgba(245, 158, 11, 0.6);
             outline-offset: -6px;
         }
+
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            backdrop-filter: blur(4px);
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(245, 158, 11, 0.2);
+            border-top: 4px solid #f59e0b;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -101,10 +129,15 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
     <!-- CSS Animation Elements -->
     <div id="stars-container" class="absolute inset-0 pointer-events-none overflow-hidden z-0"></div>
 
+    <div id="loading-overlay" class="hidden">
+        <div class="spinner mb-4"></div>
+        <p class="text-amber-400 font-medium animate-pulse" id="loading-text">Sedang memproses...</p>
+    </div>
+
     <div class="card-container z-10">
         <div class="max-w-md w-full animate__animated animate__fadeInUp">
             <!-- Card -->
-            <div class="<?= $theme_classes ?> kad-wrapper rounded-2xl shadow-2xl p-8 text-center gold-border relative overflow-hidden backdrop-blur-sm">
+            <div id="kad-to-capture" class="<?= $theme_classes ?> kad-wrapper rounded-2xl shadow-2xl p-8 text-center gold-border relative overflow-hidden backdrop-blur-sm">
                 
                 <!-- Decorative Frame -->
                 <div class="absolute top-4 left-4 w-12 h-12 border-t-2 border-l-2 border-amber-400/50 rounded-tl-xl pointer-events-none"></div>
@@ -129,7 +162,7 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                 
                 <div class="relative py-6 hover:scale-105 transition-transform duration-500">
                     <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-current to-transparent opacity-20"></div>
-                    <p class="text-base md:text-lg leading-relaxed whitespace-pre-wrap font-medium"><?= htmlspecialchars($kad['mesej']) ?></p>
+                    <p class="text-base md:text-lg leading-relaxed font-medium"><?= nl2br(htmlspecialchars(stripcslashes($kad['mesej']))) ?></p>
                     <div class="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-current to-transparent opacity-20"></div>
                 </div>
 
@@ -152,6 +185,17 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                 </button>
                 <div id="copy-toast" class="hidden text-center text-sm text-emerald-400 mt-2 font-medium bg-black/50 py-1 rounded-full backdrop-blur-sm">Link berjaya disalin!</div>
                 
+                <div class="grid grid-cols-2 gap-3 mt-4">
+                    <button onclick="downloadImage()" class="flex justify-center items-center gap-2 py-3 px-4 rounded-xl font-semibold transition-all shadow-lg transform hover:-translate-y-1 bg-blue-600 text-white hover:bg-blue-500 text-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        Simpan Gambar
+                    </button>
+                    <button onclick="downloadGif()" class="flex justify-center items-center gap-2 py-3 px-4 rounded-xl font-semibold transition-all shadow-lg transform hover:-translate-y-1 bg-amber-600 text-white hover:bg-amber-500 text-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        Simpan GIF
+                    </button>
+                </div>
+                
                 <br>
                 <a href="index.php" class="block text-center text-gray-400 text-sm hover:text-white mt-4 border-t border-gray-700/50 pt-4 transition-colors">Bina Kad Anda Sendiri</a>
             </div>
@@ -169,6 +213,83 @@ $whatsapp_text = urlencode("Lihat kad raya dari " . $kad['nama_pengirim'] . " un
                     toast.classList.remove('animate__animated', 'animate__fadeIn');
                 }, 3000);
             });
+        }
+
+        async function downloadImage() {
+            const kad = document.getElementById('kad-to-capture');
+            const overlay = document.getElementById('loading-overlay');
+            const loadingText = document.getElementById('loading-text');
+            
+            overlay.classList.remove('hidden');
+            loadingText.innerText = "Menjana Gambar...";
+
+            try {
+                const canvas = await html2canvas(kad, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: null
+                });
+                
+                const link = document.createElement('a');
+                link.download = 'KadRaya-<?= $kad['nama_pengirim'] ?>.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (err) {
+                alert("Gagal menjana gambar. Sila cuba lagi.");
+            } finally {
+                overlay.classList.add('hidden');
+            }
+        }
+
+        async function downloadGif() {
+            const kad = document.getElementById('kad-to-capture');
+            const overlay = document.getElementById('loading-overlay');
+            const loadingText = document.getElementById('loading-text');
+            
+            overlay.classList.remove('hidden');
+            loadingText.innerText = "Merakam Animasi (Sila tunggu sebentar)...";
+
+            const frames = [];
+            const frameCount = 15;
+            const captureInterval = 150; // Capture every 150ms
+
+            try {
+                for (let i = 0; i < frameCount; i++) {
+                    loadingText.innerText = `Merakam Bingkai ${i + 1}/${frameCount}...`;
+                    const canvas = await html2canvas(kad, {
+                        scale: 1, // Keep scale 1 for smaller GIF size
+                        useCORS: true,
+                        backgroundColor: null
+                    });
+                    frames.push(canvas.toDataURL('image/png'));
+                    await new Promise(resolve => setTimeout(resolve, captureInterval));
+                }
+
+                loadingText.innerText = "Menjana GIF...";
+
+                gifshot.createGIF({
+                    images: frames,
+                    gifWidth: kad.offsetWidth,
+                    gifHeight: kad.offsetHeight,
+                    interval: 0.1,
+                    numFrames: frameCount,
+                    frameDuration: 1
+                }, function(obj) {
+                    if (!obj.error) {
+                        const link = document.createElement('a');
+                        link.download = 'KadRaya-<?= $kad['nama_pengirim'] ?>.gif';
+                        link.href = obj.image;
+                        link.click();
+                        overlay.classList.add('hidden');
+                    } else {
+                        overlay.classList.add('hidden');
+                        alert("Gagal menjana GIF.");
+                    }
+                });
+            } catch (err) {
+                overlay.classList.add('hidden');
+                alert("Ralat berlaku semasa menjana GIF.");
+            }
         }
 
         // Generate falling stars
