@@ -41,3 +41,21 @@ A web application for creating and sharing personalized digital Hari Raya Aidilf
 
 ## 📁 Project Structure
 
+kad_raya/ ├── assets/ │ └── audio/ │ └── Jom_Raya.mp3 # Background music ├── uploads/ # User-uploaded images ├── index.php # Main form to create a card ├── process.php # Form processing & database insertion ├── view.php # Digital card display page ├── db_config.php # MySQL connection configuration ├── db_setup.php # Database table setup script ├── database.sql # SQL schema for the table ├── composer.json # PHP dependencies └── .gitignor
+
+## 🚀 Getting Started
+
+### Prerequisites
+- PHP 7.4+
+- MySQL / MariaDB
+- XAMPP, Laragon, or any PHP web server
+- MySQLi extension enabled
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/zackzulfadhli23-creator/kad-raya-public.git
+   cd kad-raya-public
+
+      
