@@ -58,4 +58,6 @@ kad_raya/ ├── assets/ │ └── audio/ │ └── Jom_Raya.mp3 # Ba
    git clone https://github.com/zackzulfadhli23-creator/kad-raya-public.git
    cd kad-raya-public
 
-      
+2. **Set up the database**
+   ```bash
+http://localhost/kad_raya/db_setup.php
