@@ -60,4 +60,33 @@ kad_raya/ ├── assets/ │ └── audio/ │ └── Jom_Raya.mp3 # Ba
 
 2. **Set up the database**
    ```bash
-http://localhost/kad_raya/db_setup.php
+   http://localhost/kad_raya/db_setup.php
+
+3. **Configure the database connection**
+   ```bash
+   $host = 'localhost';
+   $user = 'root';
+   $pass = '';
+   $db   = 'db_kad_raya';
+   $port = 3306;
+4. Ensure the uploads/ directory exists and is writable
+   ```bash
+   mkdir -p uploads
+   chmod 777 uploads
+
+5. Open in your browser
+   ```bash
+   http://localhost/kad_raya/
+
+🗄️ Database Schema
+```bash
+CREATE TABLE ucapan_raya (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    unique_id VARCHAR(10) NOT NULL UNIQUE,
+    nama_pengirim VARCHAR(100) NOT NULL,
+    nama_penerima VARCHAR(100) NOT NULL,
+    mesej TEXT NOT NULL,
+    tema_warna VARCHAR(50) NOT NULL,
+    image_path VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
